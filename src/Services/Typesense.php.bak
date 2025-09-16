@@ -1,0 +1,192 @@
+<?php
+
+namespace App\Services\TypeSense;
+
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
+use Laravel\Scout\EngineManager;
+use ReflectionClass;
+use Typesense\Aliases;
+use Typesense\Analytics;
+use Typesense\Collections;
+use Typesense\Debug;
+use Typesense\Health;
+use Typesense\Keys;
+use Typesense\Metrics;
+//use Typesense\MultiSearch;
+use Typesense\Operations;
+use Typesense\Presets;
+
+class TypeSenseService
+{
+    private \Laravel\Scout\Engines\TypesenseEngine $client;
+
+    public Collections $collections;
+
+    public Aliases $aliases;
+
+    public Keys $keys;
+
+    public Debug $debug;
+
+    public Metrics $metrics;
+
+    public Health $health;
+
+    public Operations $operations;
+
+    //public MultiSearch $multiSearch;
+
+    public Presets $presets;
+
+    public Analytics $analytics;
+
+    public function __construct()
+    {
+        $this->client = app(EngineManager::class)->engine('typesense');
+
+        /**
+         * Proxying such that we can use the TypeSense library
+         **/
+        $this->collections = $this->client->getCollections();
+        $this->aliases = $this->client->getAliases();
+        $this->keys = $this->client->getKeys();
+        $this->debug = $this->client->getDebug();
+        $this->metrics = $this->client->getMetrics();
+        $this->health = $this->client->getHealth();
+        $this->operations = $this->client->getOperations();
+        //$this->multiSearch = $this->client->getMultiSearch();
+        $this->presets = $this->client->getPresets();
+        $this->analytics = $this->client->getAnalytics();
+    }
+
+    public function client(): \Laravel\Scout\Engines\TypesenseEngine
+    {
+        return $this->client;
+    }
+
+    /**
+     * Allow for searching on multiple collections
+     * todo: 
+     */
+    public static function multiSearch(?string $query = null)
+    {
+        return new MultiSearch(
+            app(EngineManager::class)->engine('typesense'),
+            $query
+        );
+    }
+
+    // single search
+    // todo implement search with facets, filters, etc
+    /*
+    public static function search($query, $model)
+    {
+        return $model::search($query);
+    }
+    */
+
+    /**
+     * upsertSynonyms
+     * @param mixed $model
+     * @param mixed $synonyms
+     * @return void
+     */
+    public function upsertSynonyms($model, $synonyms = [])
+    {
+        if (method_exists($model, 'searchableAs')) {
+
+            // make sure all synonyms are unique, no empty values or null values, and reset the keys after cleaning up to prevent errors
+            $synonyms = array_values(array_unique(array_filter($synonyms)));
+
+            if (count($synonyms) > 1) {
+                // make sure the we have at least two items in $synonyms to be able to register synonyms
+                $this->collections[$model->searchableAs()]->synonyms->upsert(
+                    $synonyms[0].'-synonyms',
+                    ['synonyms' => $synonyms]
+                );
+            }
+            if (
+                count($synonyms) == 1 &&
+                $this->collections[$model->searchableAs()]->synonyms->offsetExists($synonyms[0].'-synonyms')
+            ) {
+                //dump('delete synonyms');
+                // if there is only one item in the synonym and the id is present, remove the synonym
+                $this->collections[$model->searchableAs()]->synonyms[$synonyms[0].'-synonyms']->delete();
+            }
+        }
+    }
+ 
+    /**
+     * getAllSearchableModels
+     * @return \Illuminate\Support\Collection
+     */
+    public static function getAllSearchableModels()
+    {
+        $modelPaths = [
+            app_path('Models'),
+            base_path('Modules').'/*/Models',
+            base_path('Modules').'/*/Models/*',
+            base_path('Modules').'/*/Models/*/*',
+            base_path('Modules').'/*/Models/*/*/*',
+        ];
+
+        $modelFiles = collect();
+
+        foreach ($modelPaths as $path) {
+            $modelFiles = $modelFiles->merge(collect(File::glob($path.'/*.php')));
+        }
+
+        $models = collect();
+
+        foreach ($modelFiles as $modelFile) {
+            // the models can be in any directory, so we need to extract the namespace from the file
+            $namespace = '';
+            $file = fopen($modelFile, 'r');
+            while ($line = fgets($file)) {
+                if (preg_match('/^namespace (.*);$/', $line, $matches)) {
+                    $namespace = $matches[1];
+                    break;
+                }
+            }
+            fclose($file);
+            $class = $namespace.'\\'.Str::replaceLast('.php', '', basename($modelFile));
+
+            if (class_exists($class)) {
+                $reflection = new ReflectionClass($class);
+                // check if the model use the Laravel\Scout\Searchable trait
+                $traits = get_all_traits($class);
+
+                if ($reflection->isSubclassOf('Illuminate\Database\Eloquent\Model')
+                    && in_array('Laravel\Scout\Searchable', $traits)
+                    && ! $reflection->isAbstract()
+                ) {
+                    $models->push([
+                        'class' => Str::replace('\\', '\\\\', $class),
+                        'namespace' => $namespace,
+                        'name' => $reflection->getShortName(),
+                        'table' => (new $class)->getTable(),
+                        'file' => $modelFile,
+                        // in case the model is part of a module, we can extract the module name, otherwise set it to App
+                        'module' => Str::of($namespace)->contains('Modules') ? Str::of($namespace)->explode('\\')->get(1) : 'App',
+                    ]);
+                }
+            }
+        }
+
+        return $models;
+    }
+
+    /**
+     * Dynamically proxy missing methods to the Typesense client instance.
+     *
+     * @param  string  $method
+     * @param  array  $parameters
+     * @return mixed
+     *               usage: $typesense->collections['collection_name']->retrieve();
+     */
+    public function __call($method, $parameters)
+    {
+        return $this->client->$method(...$parameters);
+    }
+}

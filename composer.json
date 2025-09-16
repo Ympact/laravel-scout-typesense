@@ -1,7 +1,7 @@
 {
     "name": "ympact/scout-typesense",
     "description": "Package description",
-    "keywords": ["laravel", "livewire", "components"],
+    "keywords": ["laravel", "scount", "typesense", "search", "llm"],
     "type": "library",
     "require": {
         "php": "^8.3",
@@ -9,8 +9,9 @@
         "illuminate/console": "^10.0|^11.0|^12.0",
         "illuminate/view": "^10.0|^11.0|^12.0",
         "symfony/console": "^6.0|^7.0",
-        "laravel/prompts": "^0.1|^0.2|^0.3"
-        
+        "laravel/prompts": "^0.1|^0.2|^0.3",
+        "typesense/typesense-php": "^4.9|^5.0",
+        "laravel/scout": "^10.0|^11.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^9.0|^10.0|^11.0|^12.0",
@@ -23,7 +24,7 @@
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Ympact\\ScoutTypesense\\": "src/"
+            "Ympact\\Typesense\\": "src/"
         },
         "files": [
             "src/helpers.php"
@@ -32,7 +33,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Ympact\\ScoutTypesense\\ScoutTypesenseServiceProvider"
+                "Ympact\\Typesense\\TypesenseServiceProvider"
             ]
         }
     },
@@ -59,7 +60,8 @@
     "minimum-stability": "stable",
     "config": {
         "allow-plugins": {
-            "pestphp/pest-plugin": true
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
         }
     }
 }

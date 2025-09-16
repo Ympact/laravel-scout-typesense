@@ -1,0 +1,90 @@
+<?php
+
+namespace Ympact\Typesense\Results;
+
+use Illuminate\Database\Eloquent\Model;
+use Ympact\Typesense\Schema\Field;
+
+/**
+ * A single search result hit
+ * 
+ */
+class Hit
+{
+    /**
+     * group
+     * in case the search was done with group_by, this prop will contain the group key
+     * this is the value of the field that was grouped by
+     * @var Field
+     */
+    public ?Field $group;
+
+    /**
+     * model/collection
+     * in case the search was a federated/multi search, this prop will contain the model/collection
+     * @var string
+     */
+    public ?string $model;
+
+    /**
+     * id
+     * the document id
+     * @var string
+     */
+    public string $id;
+
+    /**
+     * document
+     * the document
+     * @var Model
+     */
+    public Model $document;
+
+    /**
+     * highlights
+     * the highlights
+     * @var array
+     */
+    public array $highlights;
+
+    /**
+     * text_match
+     * the text match
+     * @var int
+     */
+    public int $match;
+
+/*
+    "highlights": [
+        {
+          "field": "company_name",
+          "snippet": "<mark>Stark</mark> Industries",
+          "matched_tokens": ["Stark"]
+        }
+      ],
+      "document": {
+        "id": "124",
+        "company_name": "Stark Industries",
+        "num_employees": 5215,
+        "country": "USA"
+      },
+      "text_match": 130916
+*/
+
+    public function __construct(
+        ?Field $group,
+        ?string $model,
+        string $id,
+        Model $document,
+        array $highlights,
+        int $match
+    ) {
+        $this->group = $group;
+        $this->model = $model;
+        $this->id = $id;
+        $this->document = $document;
+        $this->highlights = $highlights;
+        $this->match = $match;
+    }
+
+}

@@ -1,11 +1,11 @@
 <?php
 
-namespace Ympact\ScoutTypesense\Tests\Feature;
+namespace Ympact\Typesense\Tests\Feature;
 
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Orchestra\Testbench\TestCase;
-use Ympact\ScoutTypesense\ScoutTypesenseServiceProvider;
+use Ympact\Typesense\ScoutTypesenseServiceProvider;
 use Mockery;
 
 class BuildFeatureCommandTest extends TestCase

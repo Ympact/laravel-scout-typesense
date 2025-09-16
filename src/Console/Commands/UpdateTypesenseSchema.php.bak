@@ -1,0 +1,39 @@
+<?php
+
+namespace Ympact\Typesense\Console\Commands;
+
+use Illuminate\Console\Command;
+use Ympact\Typesense\Services\TypesenseSchemaManager;
+
+class UpdateTypesenseSchema extends Command
+{
+    /**
+     * The name and signature of the console command.
+     */
+    protected $signature = 'ympact:update-schema {model}';
+
+    /**
+     * The console command description.
+     */
+    protected $description = 'Update the Typesense schema for the specified model with zero downtime';
+
+    /**
+     * Execute the console command.
+     */
+    public function handle(TypesenseSchemaManager $schemaManager): int
+    {
+        $model = $this->argument('model');
+
+        $this->info("Updating schema for model: {$model}");
+
+        try {
+            $schemaManager->updateSchema($model);
+
+            $this->info("Schema updated successfully for model: {$model}");
+            return Command::SUCCESS;
+        } catch (\Exception $e) {
+            $this->error("Failed to update schema: {$e->getMessage()}");
+            return Command::FAILURE;
+        }
+    }
+}

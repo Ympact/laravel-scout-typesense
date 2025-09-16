@@ -1,0 +1,140 @@
+<?php
+
+namespace Ympact\Typesense\Builders;
+
+use Closure;
+use Illuminate\Database\Eloquent\Model;
+use Ympact\Typesense\Enums\FieldTypeEnum;
+use Ympact\Typesense\Types\Schema;
+use Ympact\Typesense\Types\SchemaField;
+
+class SchemaBuilder
+{
+    protected Schema $schema;
+
+    protected Model $model;
+
+    public function __construct(Model $model, ?string $name = null)
+    {
+        $this->model = $model;
+        $name = $name ?? $model->searchableAs();
+
+        $this->schema = new Schema($name);
+
+        // make sure we have all the required fields
+        $this->createdAt();
+    }
+
+    public static function make(Model $model, ?string $name = null): self
+    {
+        return new static($model, $name);
+    }
+
+    /**
+     * Add a field via callback closure for fluent building.
+     */
+    public function field(Closure $callback): static
+    {
+        $field = new SchemaField(
+            name: 'title',
+            type: FieldTypeEnum::STRING
+        );
+
+        // Let the user define properties in the closure:
+        $callback($field);
+
+        $this->schema->addField($field);
+
+        return $this;
+    }
+
+    /**
+     * Enable nested fields
+     */
+    public function enableNestedFields(): static
+    {
+        $this->schema->setEnableNestedFields(true);
+
+        return $this;
+    }
+
+    /**
+     * Add default id field
+     */
+    public function id(string $fieldName = 'id'): static
+    {
+        $field = new SchemaField(
+            name: $fieldName,
+            type: FieldTypeEnum::STRING
+        );
+
+        $this->schema->addField($field);
+
+        return $this;
+    }
+
+    /**
+     * Add default created_at field
+     * This field is required for typesense to work properly
+     * is added by default.
+     */
+    public function createdAt(string $fieldName = 'created_at'): static
+    {
+        $field = new SchemaField(
+            name: $fieldName,
+            type: FieldTypeEnum::STRING
+        );
+
+        $this->schema->addField($field);
+
+        return $this;
+    }
+
+    /**
+     * Add default soft_delete field
+     */
+    public function softDelete(): static
+    {
+        $field = new SchemaField(
+            name: '__soft_deleted',
+            type: FieldTypeEnum::INT32,
+            optional: true
+        );
+
+        $this->schema->addField($field);
+
+        return $this;
+    }
+
+    /**
+     * Set a default sorting field
+     */
+    public function defaultSort(string $field): static
+    {
+        // make sure the field name has been added to the schema
+        if (! $this->schema->hasField($field)) {
+            throw new \Exception("Cannot sort on field $field: not found in schema");
+        }
+        $this->schema->setDefaultSortingField($field);
+
+        return $this;
+    }
+
+    /**
+     * Set version date (which we store in metadata)
+     */
+    public function versionDate(string $dateString): static
+    {
+        $this->schema->setVersionDate($dateString);
+
+        return $this;
+    }
+
+    /**
+     * Final output for the schema array
+     */
+    public function toArray(): array
+    {
+        return $this->schema->toArray();
+    }
+}

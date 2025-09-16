@@ -1,0 +1,188 @@
+<?php
+
+namespace App\Services\TypeSense;
+
+use Illuminate\Support\Traits\Conditionable;
+
+/**
+ * @todo further implement this class. see: https://typesense.org/docs/26.0/api/search.html
+ */
+class SearchParams
+{
+    use Conditionable;
+
+    protected $params = [];
+
+    protected $sorts = [];
+
+    protected $filters = [];
+
+    protected $known = [
+        'q',
+        'query_by',
+        'prefix',
+        'infix',
+        'pre_segmented_query',
+        'preset',
+        'vector_query',
+        'voice_query',
+
+        'filter_by',
+        'enable_lazy_filter',
+
+        'query_by_weights',
+        'text_match_type',
+        'sort_by',
+        'prioritize_exact_match',
+        'prioritize_token_position',
+        'prioritize_num_matching_fields',
+        'pinned_hits',
+        'hidden_hits',
+        'enable_overrides',
+        'override_tags',
+        'max_candidates',
+
+        'page',
+        'per_page',
+        'offset',
+        'limit',
+
+        // 'facet',
+        'facet_by',
+        'max_facet_values',
+        'facet_query',
+        'facet_query_num_typos',
+        'facet_return_parent',
+        'facet_sample_percent',
+        'facet_sample_threshold',
+
+        'group_by',
+        'group_limit',
+        'group_missing_values',
+
+        'include_fields',
+        'exclude_fields',
+        'highlight_fields',
+        'highlight_full_fields',
+        'highlight_affix_num_tokens',
+        'highlight_start_tag',
+        'highlight_end_tag',
+        'enable_highlight_v1',
+        'snippet_threshold',
+        'limit_hits',
+        'search_cutoff_ms',
+        'exhaustive_search',
+
+        'num_typos',
+        'min_len_1typo',
+        'min_len_2typo',
+        'split_join_tokens',
+        'typo_tokens_threshold',
+        'drop_tokens_threshold',
+        'drop_tokens_mode',
+        'enable_typos_for_numerical_tokens',
+
+        'use_cache',
+        'cache_ttl',
+    ];
+
+    public function __construct($params = [])
+    {
+        $this->params = $params;
+    }
+
+    /**
+     * @param  string  $field  The field to sort by (can also be an eval string). See: https://typesense.org/docs/26.0/api/search.html#sorting-null-empty-or-missing-values
+     * @param  bool  $ascending  Whether to sort ascending or descending
+     * @return $this
+     */
+    public function sort($field, $ascending = true): static
+    {
+        $this->params['sort_by'] = $field.($ascending ? ':asc' : ':desc');
+
+        return $this;
+    }
+
+    private function buildSort()
+    {
+        $sort = '';
+        // build the sort string (comma seperated field:asc|desc)
+        foreach ($this->sorts as $field => $direction) {
+            $sort .= $field.':'.($direction ? 'asc' : 'desc').',';
+        }
+        // remove the last comma
+        $sort = rtrim($sort, ',');
+        // if sort is not empty, add it to the parameters
+        if ($sort) {
+            $this->params['sort_by'] = $sort;
+        }
+    }
+
+    public function query($queryBy): static
+    {
+        $this->params['q'] = $queryBy;
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function queryFields(string|array $fields): static
+    {
+        // if it is an array, convert to comma seperated string
+        if (is_array($fields)) {
+            $fields = implode(',', $fields);
+        }
+        $this->params['query_by'] = $fields;
+
+        return $this;
+    }
+
+    public function filter($filter): static
+    {
+        // todo implement Filter class
+        $this->params['filter_by'] = $filter;
+
+        return $this;
+    }
+
+    public function includeFields($fields): static
+    {
+        $this->params['include_fields'] = $fields;
+
+        return $this;
+    }
+
+    public function getParams()
+    {
+        $this->buildSort();
+
+        // prevent empty values from being passed
+        return array_filter($this->params);
+    }
+
+    /**
+     * Adding the params raw through passing an array
+     * No chedck is being done. The passed params overwrite the existing ones
+     */
+    public function raw(array $params): static
+    {
+        $this->params = array_merge($this->params, $params);
+
+        return $this;
+    }
+
+    /**
+     * implement magic method for all known parameters
+     * allows for raw setting of parameters and for all parameters that do not have a specific method defined
+     */
+    public function __call($method, $parameters): static
+    {
+        if (in_array($method, $this->known)) {
+            $this->params[$method] = $parameters[0];
+        }
+
+        return $this;
+    }
+}

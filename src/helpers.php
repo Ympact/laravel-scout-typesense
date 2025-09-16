@@ -1,15 +1,23 @@
 <?php
 
-namespace Ympact\ScoutTypesense;
+namespace Ympact\Typesense;
 
-if (! function_exists('Ympact\ScoutTypesense\someFunction')) {
+use Laravel\Scout\EngineManager;
+use Ympact\Typesense\Services\TypesenseEngine;
+
+if (! function_exists('typesense')) {
     /**
-     * Example function.
-     *
-     * @return string
+     * Get the typesenseEngine
      */
-    function someFunction()
+    function typesense(): TypesenseEngine
     {
-        return 'This is an example function from the Ympact ScoutTypesense package.';
+        /**
+         * @var \Ympact\Typesense\Services\TypesenseEngine $ts
+         *
+         * @see \Typesense\Client
+         */
+        $ts = resolve(EngineManager::class)->engine('typesense-extended');
+
+        return $ts;
     }
 }

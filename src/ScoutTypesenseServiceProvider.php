@@ -1,6 +1,6 @@
 <?php
 
-namespace Ympact\ScoutTypesense;
+namespace Ympact\Typesense;
 
 use Illuminate\Support\ServiceProvider;
 
