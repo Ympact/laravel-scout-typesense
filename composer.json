@@ -1,0 +1,65 @@
+{
+    "name": "ympact/scout-typesense",
+    "description": "Package description",
+    "keywords": ["laravel", "livewire", "components"],
+    "type": "library",
+    "require": {
+        "php": "^8.3",
+        "illuminate/support": "^10.0|^11.0|^12.0",
+        "illuminate/console": "^10.0|^11.0|^12.0",
+        "illuminate/view": "^10.0|^11.0|^12.0",
+        "symfony/console": "^6.0|^7.0",
+        "laravel/prompts": "^0.1|^0.2|^0.3"
+        
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0|^10.0|^11.0|^12.0",
+        "mockery/mockery": "^1.6|^2.0",
+        "orchestra/testbench": "^9.5|^10.0",
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-browser": "^4.0",
+        "pestphp/pest-plugin-laravel": "^4.0"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Ympact\\ScoutTypesense\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Ympact\\ScoutTypesense\\ScoutTypesenseServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "setup": [
+            "composer config --no-plugins allow-plugins.pestphp/pest-plugin true",
+            "composer update",
+            "npm install",
+            "@php .scripts/setup.php"
+        ],
+        "test": [
+            "./vendor/bin/pest"
+        ],
+        "lint": [
+            "./vendor/bin/pint"
+        ]
+    },
+    "authors": [
+        {
+            "name": "Maurits",
+            "email": "maurits@ympact-technologies.nl"
+        }
+    ],
+    "minimum-stability": "stable",
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}

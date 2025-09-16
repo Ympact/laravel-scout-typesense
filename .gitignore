@@ -1,0 +1,7 @@
+node_modules
+dist
+/vendor
+.phpunit.result.cache
+composer.lock
+/playground/vendor
+storage

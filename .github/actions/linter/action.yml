@@ -1,0 +1,53 @@
+name: 'Linter'
+description: 'Run linter and commit code style fixes'
+
+#inputs:
+#  flux_license_user:
+#    description: 'Flux license user'
+#    required: true
+#
+#  flux_license_pass:
+#    description: 'Flux license password'
+#    required: true
+#    
+#  composer_auth_pat:
+#    description: 'Composer auth PAT'
+#    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+
+#    - name: Add Flux Credentials Loaded From ENV
+#      shell: bash
+#      run: composer config http-basic.composer.fluxui.dev "${{ inputs.flux_license_user }}" "${{ inputs.flux_license_pass }}"
+#
+#    - name: Add PAT for private repos
+#      shell: bash
+#      run: composer config --auth http-basic.github.com "${{ inputs.composer_auth_pat }}" ""
+
+    - name: Install Dependencies
+      shell: bash
+      run: |
+        composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+        npm install
+
+    - name: Run Pint
+      shell: bash
+      run: vendor/bin/pint
+
+    - name: Commit Changes
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: fix code style
+        commit_options: '--no-verify'
+        file_pattern: |
+          **/*
+          !.github/workflows/*

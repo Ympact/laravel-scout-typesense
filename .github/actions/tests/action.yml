@@ -1,0 +1,86 @@
+name: 'Tests'
+description: 'Run tests'
+
+#inputs:
+#  flux_license_user:
+#    description: 'Flux license user'
+#    required: true
+#
+#  flux_license_pass:
+#    description: 'Flux license password'
+#    required: true
+#    
+#  composer_auth_pat:
+#    description: 'Composer auth PAT'
+#    required: true
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v5
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.4
+        tools: composer:v2
+        coverage: xdebug
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'npm'
+
+    - name: Install Node Dependencies
+      shell: bash
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      shell: bash
+      run: npx playwright install --with-deps
+
+#    - name: Add Flux Credentials Loaded From ENV
+#      shell: bash
+#      run: composer config http-basic.composer.fluxui.dev "${{ inputs.flux_license_user }}" "${{ inputs.flux_license_pass }}"
+#
+#    - name: Add PAT for private repos
+#      shell: bash
+#      run: composer config --auth http-basic.github.com "${{ inputs.composer_auth_pat }}" ""
+
+    - name: Install Dependencies
+      shell: bash
+      run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+    - name: Copy Environment File
+      shell: bash
+      run: cp .env.testing .env
+
+    - name: Generate Application Key
+      shell: bash
+      run: php artisan key:generate
+
+    - name: Create SQLite database
+      shell: bash
+      run: |
+        mkdir -p database
+        touch database/database.sqlite
+
+    - name: Run migrations
+      shell: bash
+      run: |
+        php artisan migrate --env=testing    
+
+    - name: Build Assets
+      shell: bash
+      run: php artisan optimize:clear && php artisan optimize
+
+    - name: Build Assets
+      shell: bash
+      run: npm run build
+    
+    - name: Run Tests
+      shell: bash
+      run: ./vendor/bin/pest --ci

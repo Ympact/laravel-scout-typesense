@@ -1,0 +1,7 @@
+#!/usr/bin/env php
+<?php
+$args = array_slice($argv, 1);
+if (!in_array('--ansi', $args)) {
+    $args[] = '--ansi';
+}
+passthru('./vendor/bin/testbench ' . implode(' ', $args));

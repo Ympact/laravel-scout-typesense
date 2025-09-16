@@ -1,0 +1,36 @@
+name: Push or PR to staging
+
+on:
+  push:
+    branches:
+      - staging
+
+  pull_request:
+    branches:
+      - staging
+
+permissions:
+  contents: write
+
+jobs: 
+  quality:
+    runs-on: ubuntu-latest
+    environment: Testing
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/linter
+#        with:
+#            flux_license_user: ${{ secrets.FLUX_LICENSE_USER }}
+#            flux_license_pass: ${{ secrets.FLUX_LICENSE_PASS }}
+#            composer_auth_pat: ${{ secrets.COMPOSER_AUTH_PAT }}
+
+  test:
+    runs-on: ubuntu-latest
+    environment: Testing
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/tests
+#        with:
+#            flux_license_user: ${{ secrets.FLUX_LICENSE_USER }}
+#            flux_license_pass: ${{ secrets.FLUX_LICENSE_PASS }}
+#            composer_auth_pat: ${{ secrets.COMPOSER_AUTH_PAT }}
